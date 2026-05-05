@@ -28,7 +28,13 @@ class Search:
                 doc_scores[doc] += score
         # sort documents by score in descending order
         ranked_docs = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
-        return[doc for doc, score in ranked_docs]
+
+        result_urls = set()
+        for doc, score in ranked_docs:
+            urls = self.indexer.quotes[doc]['urls']
+            result_urls.update(urls)
+            
+        return [str(doc) for doc in result_urls]
     
     # print documents containing a certain word along with their frequencies
     def print_word(self,word):

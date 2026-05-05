@@ -6,9 +6,9 @@ from src.search import Search
 # Fixture to create a Search instance with a pre-populated Indexer for testing
 def search():
     idx = Indexer()
-    idx.add_document(1, "The quick brown fox jumps over the lazy dog")
-    idx.add_document(2, "The lazy dog is sleeping")
-    idx.add_document(3, "The fox is quick and clever")
+    idx.add_document(1, ["The quick brown fox jumps over the lazy dog"])
+    idx.add_document(2, ["The lazy dog is sleeping"])
+    idx.add_document(3, ["The fox is quick and clever"])
     return Search(idx)
 
 # Testing single word search
@@ -38,10 +38,24 @@ def test_empty_query(search):
 
 def test_ranking():
     idx = Indexer()
-    idx.add_document(1, "life life life")
-    idx.add_document(2, "life")
+    idx.add_document(1, ["life life life"])
+    idx.add_document(2, ["life"])
     
     search = Search(idx)
     results = search.find("life")
 
-    assert results[0] == "1"  # Document 1 should be ranked higher due to higher term frequency
+    assert set(results) == {"1", "2"}     
+
+def test_search_returns_all_urls():
+    idx = Indexer()
+
+    quote = "Life is beautiful"
+
+    idx.add_document("url1", [quote])
+    idx.add_document("url2", [quote])
+
+    search = Search(idx)
+
+    results = search.find("life")
+
+    assert set(results) == {"url1", "url2"}

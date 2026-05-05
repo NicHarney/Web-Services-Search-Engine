@@ -53,10 +53,7 @@ class Crawler:
         quotes = soup.find_all('span', class_='text')
 
         # Combine the text from all quotes into a single string
-        text_data = []
-        for quote in quotes:
-            text_data.append(quote.get_text())
-        return ' '.join(text_data)
+        return [q.get_text() for q in quotes]
     
     # Find URL of the next page
     def get_next_page(self, html):

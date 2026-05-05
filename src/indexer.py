@@ -8,22 +8,38 @@ class Indexer:
     def __init__(self):
         self.index = {}
         self.total_documents = 0
+
+        self.quote_map = {}
+        self.quotes = {}
+        self.next_id = 0
+
+    def _get_or_create_quote_id(self, quote):
+        if quote not in self.quote_map:
+            quote_id = str(self.next_id)
+            self.quote_map[quote] = quote_id
+            self.quotes[quote_id] = {
+                'quote': quote,
+                'urls': set()
+            }
+            self.next_id += 1
+        return self.quote_map[quote]
     
     # add a document to the indexer and update the index and document count
-    def add_document(self, document_id, text):
-        # Convert document_id to string for consistent indexing
-        document_id = str(document_id)
-        words = self.tokenize(text)
-        self.total_documents += 1
+    def add_document(self, url, quotes):
+        url = str(url)
+        for quote in quotes:
+            quote_id = self._get_or_create_quote_id(quote)
+            self.quotes[quote_id]['urls'].add(url)
 
-        # Update the index with the term frequencies for each word in the document
-        for word in words:
-            if word not in self.index:
-                self.index[word] = {}
-            if document_id not in self.index[word]:
-                self.index[word][document_id] = 0
-            self.index[word][document_id] += 1
-    
+            words = self.tokenize(quote)
+
+            for word in words:
+                if word not in self.index:
+                    self.index[word] = {}
+                if quote_id not in self.index[word]:
+                    self.index[word][quote_id] = 0
+                self.index[word][quote_id] += 1
+        self.total_documents = len(self.quotes)
     # tokenize text to lowercase words and remove punctuation
     def tokenize(self, text):
         text = text.lower()
