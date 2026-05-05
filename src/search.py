@@ -1,3 +1,4 @@
+import math
 class Search:
 
     def __init__(self, indexer):
@@ -9,25 +10,25 @@ class Search:
         if not query_terms:
             return []
         
-        # Get postings for the first term
-        first_term = query_terms[0]
-        postings = self.indexer.get_postings(first_term)
-        
-        # If no postings for the first term, return empty result
-        if not postings:
-            return []
-        
-        # Initialize results with document IDs from the first term
-        results = set(postings.keys())
-        
-        # Intersect with postings of subsequent terms
-        for term in query_terms[1:]:
-            term_postings = self.indexer.get_postings(term)
-            if not term_postings:
-                return []  # If any term has no postings, return empty result
-            results.intersection_update(term_postings.keys())
-        
-        return list(results)
+        # implement idf ranking
+        doc_scores = {}
+        N = self.indexer.total_documents
+        for term in query_terms:
+            postings = self.indexer.get_postings(term)
+            df = len(postings)
+
+            if df == 0:
+                continue
+            idf = math.log((N + 1) / (df + 1)) + 1 # Adding 1 to avoid division by zero and to smooth idf
+
+            for doc, tf in postings.items():
+                score = tf * idf
+                if doc not in doc_scores:
+                    doc_scores[doc] = 0
+                doc_scores[doc] += score
+        # sort documents by score in descending order
+        ranked_docs = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
+        return[doc for doc, score in ranked_docs]
     
     # print documents containing a certain word along with their frequencies
     def print_word(self,word):

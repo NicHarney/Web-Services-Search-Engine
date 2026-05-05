@@ -35,3 +35,13 @@ def test_no_match(search):
 def test_empty_query(search):
     results = search.find("")
     assert results == []
+
+def test_ranking():
+    idx = Indexer()
+    idx.add_document(1, "life life life")
+    idx.add_document(2, "life")
+    
+    search = Search(idx)
+    results = search.find("life")
+
+    assert results[0] == "1"  # Document 1 should be ranked higher due to higher term frequency

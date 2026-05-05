@@ -2,6 +2,7 @@ import requests
 import time
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from collections import deque
 class Crawler:
     # Crawler class to fetch web pages, extract text, and find next page links
     def __init__(self,base_url,indexer):
@@ -11,17 +12,27 @@ class Crawler:
     
     # main loop to crawl pages, extract text, add to indexer and find next page until no more pages or a visited page is encountered
     def crawl(self):
-        url = self.base_url
+        queue = deque([self.base_url])
 
-        while url:
+        while queue:
+            url = queue.popleft()
             if url in self.visited:
-                break
-
+                continue
+            print(f"Crawling: {url}")
             self.visited.add(url)
             html = self.fetch_page(url)
             text = self.extract_text(html)
             self.indexer.add_document(url, text)
-            url = self.get_next_page(html)
+            next_page = self.get_next_page(html)
+            # add next page
+            if next_page:
+                queue.append(next_page)
+            
+            # add tag links
+            tag_links = self.get_tag_links(html)
+            for tag_link in tag_links:
+                if tag_link not in self.visited:
+                    queue.append(tag_link)
     
     # Fetch a web page and return its HTML content, with error handling and a politeness delay
     def fetch_page(self, url):
@@ -57,3 +68,13 @@ class Crawler:
             href = next_link.find('a')['href']
             return urljoin(self.base_url, href)
         return None
+
+    def get_tag_links(self,html):
+        soup = BeautifulSoup(html, 'html.parser')
+        tags = soup.find_all('a', class_='tag')
+        tag_links = []
+        for tag in tags:
+            href = tag.get('href')
+            if href:
+                tag_links.append(urljoin(self.base_url, href))
+        return tag_links
