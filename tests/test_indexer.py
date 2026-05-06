@@ -6,9 +6,9 @@ from src.indexer import Indexer
 # Sample indexer fixture to be used in multiple tests
 def indexer():
     idx = Indexer()
-    idx.add_document(1, ["The quick brown fox jumps over the lazy dog"])
-    idx.add_document(2, ["The lazy dog is sleeping"])
-    idx.add_document(3, ["The fox is quick and clever"])
+    idx.add_document(1, [{"text": "The quick brown fox jumps over the lazy dog", "type": "text"}])
+    idx.add_document(2, [{"text": "The lazy dog is sleeping", "type": "text"}])
+    idx.add_document(3, [{"text": "The fox is quick and clever", "type": "text"}])
     return idx
 # Test tokenization of text into lowercase words without punctuation
 def test_tokenization():
@@ -27,10 +27,9 @@ def test_case_insensitivity(indexer):
 # Test term frequency by counting occurrences of a word in a document
 def test_term_frequency():
     idx = Indexer()
-    idx.add_document(1, ["test test test"])
+    idx.add_document(1, [{"text": "test test test", "type": "text"}])
     postings = idx.get_postings("test")
-    quote_id = list(postings.keys())[0]
-    assert postings[quote_id] == 3
+    assert postings == {"0": 3}  # The word "test" appears 3 times in document ID "0"
 
 # Test document frequency by counting the number of documents containing a word
 def test_document_frequency(indexer):
@@ -45,8 +44,8 @@ def test_missing_word(indexer):
 # Test saving and loading the index to ensure data integrity across sessions
 def test_save_load(tmp_path):
     idx = Indexer()
-    idx.add_document(1, ["Hello world"])
-    idx.add_document(2, ["Another document"])
+    idx.add_document(1, [{"text": "Hello world", "type": "text"}])
+    idx.add_document(2, [{"text": "Another document", "type": "text"}])
     
     file_path = tmp_path / "index.json"
     idx.save(file_path)
@@ -60,7 +59,7 @@ def test_save_load(tmp_path):
 
 def test_deduplication():
     idx = Indexer()
-    quote = "Duplicate quote"
+    quote = {"text": "Duplicate quote", "type": "text"}
     idx.add_document(1, [quote])
     idx.add_document(2, [quote])
 
@@ -70,3 +69,5 @@ def test_deduplication():
     quote_id = list(postings.keys())[0]
     urls = idx.quotes[quote_id]['urls']
     assert urls == {"1", "2"}  # Both URLs should be associated with the same quote ID
+
+

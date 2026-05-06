@@ -15,8 +15,10 @@ def test_extract_text():
     # Create a Crawler instance with a dummy base URL and an Indexer instance
     crawler = Crawler("http://example.com", Indexer())
     text = crawler.extract_text(html)
-    assert "Quote 1" in text
-    assert "Quote 2" in text
+    assert text == [
+        {'text': 'Quote 1', 'type': 'text'},
+        {'text': 'Quote 2', 'type': 'text'}
+    ]
 
 # Test get next page URL from HTML
 def test_next_page():

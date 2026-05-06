@@ -48,12 +48,39 @@ class Crawler:
     # extract text from HTML
     def extract_text(self, html):
         soup = BeautifulSoup(html, 'html.parser')
-        
-        # Extract text from all span elements with class 'text'
-        quotes = soup.find_all('span', class_='text')
 
-        # Combine the text from all quotes into a single string
-        return [q.get_text() for q in quotes]
+        content = []
+        
+        # Extract text from all span elements with each class and assign weights based on the type of content
+        for quote in soup.find_all('span', class_='text'):
+            content.append({
+                'text': quote.get_text(),
+                'type':'text'
+            })
+
+        for b in soup.find_all(['b', 'strong']):
+            content.append({
+                'text': b.get_text(),
+                'type':'bold'
+            })
+        for i in soup.find_all(['i', 'em']):
+            content.append({
+                'text': i.get_text(),
+                'type':'italic'
+            })
+        for h in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+            content.append({
+                'text': h.get_text(),
+                'type':'heading'
+            })
+        for a in soup.find_all('a'):
+            content.append({
+                'text': a.get_text(),
+                'type':'anchor'
+            })
+        return content
+
+    
     
     # Find URL of the next page
     def get_next_page(self, html):

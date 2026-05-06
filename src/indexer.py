@@ -1,5 +1,6 @@
 import json
 import re
+import os
 
 #  Inverted Indexer Implementation
 class Indexer:
@@ -25,9 +26,13 @@ class Indexer:
         return self.quote_map[quote]
     
     # add a document to the indexer and update the index and document count
-    def add_document(self, url, quotes):
+    def add_document(self, url, content):
         url = str(url)
-        for quote in quotes:
+        for item in content:
+            quote = item['text']
+            content_type = item['type']
+
+            weight = HTML_WEIGHTS.get(content_type, 1)
             quote_id = self._get_or_create_quote_id(quote)
             self.quotes[quote_id]['urls'].add(url)
 
@@ -38,7 +43,7 @@ class Indexer:
                     self.index[word] = {}
                 if quote_id not in self.index[word]:
                     self.index[word][quote_id] = 0
-                self.index[word][quote_id] += 1
+                self.index[word][quote_id] += weight
         self.total_documents = len(self.quotes)
     # tokenize text to lowercase words and remove punctuation
     def tokenize(self, text):
@@ -52,20 +57,48 @@ class Indexer:
     
     # Save the index and document count to a JSON file
     def save(self, filepath):
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         with open(filepath, 'w') as f:
+            serialized_quotes = {}
+            for quote_id, quote_data in self.quotes.items():
+                serialized_quotes[quote_id] = {
+                    'quote': quote_data['quote'],
+                    'urls': list(quote_data['urls'])
+                }
             json.dump({
                 'index': self.index,
-                'total_documents': self.total_documents
+                'quotes': serialized_quotes,
+                'quote_map': self.quote_map,
+                'total_documents': self.total_documents,
+                'next_id': self.next_id
+                
             }, f)
     # Load the index and document count from a JSON file
     def load(self, filepath):
         with open(filepath, 'r') as f:
+            self.quotes = {}
+            for quote_id, quote_data in json.load(f)['quotes'].items():
+                self.quotes[quote_id] = {
+                    'quote': quote_data['quote'],
+                    'urls': set(quote_data['urls'])
+                }
             data = json.load(f)
             self.index = data['index']
             self.total_documents = data['total_documents']
+            self.quote_map = data['quote_map']
+            self.next_id = data['next_id']
 
 DOCS = {
     1: "The quick brown fox jumps over the lazy dog",
     2: "The lazy dog is sleeping",
     3: "The fox is quick and clever"
+}
+
+HTML_WEIGHTS = {
+    "title": 5,
+    "heading": 4,
+    "bold": 2,
+    "italic": 1.5,
+    "anchor": 1.5,
+    "text": 1
 }
