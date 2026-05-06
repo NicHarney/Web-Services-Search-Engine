@@ -52,31 +52,19 @@ class Crawler:
         content = []
         
         # Extract text from all span elements with each class and assign weights based on the type of content
-        for quote in soup.find_all('span', class_='text'):
-            content.append({
-                'text': quote.get_text(),
-                'type':'text'
-            })
+        quotes = soup.find_all('span', class_='text')
 
-        for b in soup.find_all(['b', 'strong']):
+        for quote in quotes:
+            text = quote.get_text()
+
             content.append({
-                'text': b.get_text(),
-                'type':'bold'
-            })
-        for i in soup.find_all(['i', 'em']):
-            content.append({
-                'text': i.get_text(),
-                'type':'italic'
-            })
-        for h in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
-            content.append({
-                'text': h.get_text(),
-                'type':'heading'
-            })
-        for a in soup.find_all('a'):
-            content.append({
-                'text': a.get_text(),
-                'type':'anchor'
+                "quote": text,
+                "features": [
+                    {
+                    'text': text,
+                    'type': 'text'
+                    }
+                ]
             })
         return content
 

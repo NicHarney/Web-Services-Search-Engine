@@ -23,27 +23,37 @@ class Indexer:
                 'urls': set()
             }
             self.next_id += 1
-        return self.quote_map[quote]
+            return quote_id, True
+        return self.quote_map[quote], False
     
     # add a document to the indexer and update the index and document count
     def add_document(self, url, content):
         url = str(url)
         for item in content:
-            quote = item['text']
-            content_type = item['type']
+           quote_text = item['quote']
+           quote_id, is_new = self._get_or_create_quote_id(quote_text)
 
-            weight = HTML_WEIGHTS.get(content_type, 1)
-            quote_id = self._get_or_create_quote_id(quote)
-            self.quotes[quote_id]['urls'].add(url)
+           self.quotes[quote_id]['urls'].add(url)
 
-            words = self.tokenize(quote)
-
-            for word in words:
-                if word not in self.index:
-                    self.index[word] = {}
-                if quote_id not in self.index[word]:
-                    self.index[word][quote_id] = 0
-                self.index[word][quote_id] += weight
+           if not is_new:
+               continue  # Skip re-indexing if the quote already exists
+           current_position = 0
+           for feature in item['features']:
+                text = feature['text']
+                feature_type = feature['type']
+                weight = HTML_WEIGHTS.get(feature_type, 1)
+                words = self.tokenize(text)
+                for word in words:
+                    if word not in self.index:
+                        self.index[word] = {}
+                    if quote_id not in self.index[word]:
+                        self.index[word][quote_id] = {
+                            "score": 0,
+                            "positions": []
+                        }
+                    self.index[word][quote_id]['score'] += weight
+                    self.index[word][quote_id]['positions'].append(current_position)
+                    current_position += 1
         self.total_documents = len(self.quotes)
     # tokenize text to lowercase words and remove punctuation
     def tokenize(self, text):
@@ -58,13 +68,14 @@ class Indexer:
     # Save the index and document count to a JSON file
     def save(self, filepath):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        serialized_quotes = {}
+        for quote_id, quote_data in self.quotes.items():
+            serialized_quotes[quote_id] = {
+                'quote': quote_data['quote'],
+                'urls': list(quote_data['urls'])
+            }
         with open(filepath, 'w') as f:
-            serialized_quotes = {}
-            for quote_id, quote_data in self.quotes.items():
-                serialized_quotes[quote_id] = {
-                    'quote': quote_data['quote'],
-                    'urls': list(quote_data['urls'])
-                }
+
             json.dump({
                 'index': self.index,
                 'quotes': serialized_quotes,
@@ -76,17 +87,19 @@ class Indexer:
     # Load the index and document count from a JSON file
     def load(self, filepath):
         with open(filepath, 'r') as f:
-            self.quotes = {}
-            for quote_id, quote_data in json.load(f)['quotes'].items():
-                self.quotes[quote_id] = {
-                    'quote': quote_data['quote'],
-                    'urls': set(quote_data['urls'])
-                }
             data = json.load(f)
-            self.index = data['index']
-            self.total_documents = data['total_documents']
-            self.quote_map = data['quote_map']
-            self.next_id = data['next_id']
+
+        self.index = data['index']
+        self.quote_map = data['quote_map']
+        self.total_documents = data['total_documents']
+        self.next_id = data['next_id']
+
+        self.quotes = {}
+        for quote_id, quote_data in data['quotes'].items():
+            self.quotes[quote_id] = {
+                'quote': quote_data['quote'],
+                'urls': set(quote_data['urls'])
+            }
 
 DOCS = {
     1: "The quick brown fox jumps over the lazy dog",

@@ -6,9 +6,39 @@ from src.indexer import Indexer
 # Sample indexer fixture to be used in multiple tests
 def indexer():
     idx = Indexer()
-    idx.add_document(1, [{"text": "The quick brown fox jumps over the lazy dog", "type": "text"}])
-    idx.add_document(2, [{"text": "The lazy dog is sleeping", "type": "text"}])
-    idx.add_document(3, [{"text": "The fox is quick and clever", "type": "text"}])
+    idx.add_document(1, [
+        {
+            "quote": "The quick brown fox jumps over the lazy dog", 
+            "features": [
+                {
+                    "text": "The quick brown fox jumps over the lazy dog",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+    idx.add_document(2, [
+        {
+            "quote": "The lazy dog is sleeping",
+            "features": [
+                {
+                    "text": "The lazy dog is sleeping",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+    idx.add_document(3, [
+        {
+            "quote": "The fox is quick and clever",
+            "features": [
+                {
+                    "text": "The fox is quick and clever",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
     return idx
 # Test tokenization of text into lowercase words without punctuation
 def test_tokenization():
@@ -27,9 +57,19 @@ def test_case_insensitivity(indexer):
 # Test term frequency by counting occurrences of a word in a document
 def test_term_frequency():
     idx = Indexer()
-    idx.add_document(1, [{"text": "test test test", "type": "text"}])
+    idx.add_document(1, [
+        {
+            "quote": "test test test",
+            "features": [
+                {
+                    "text": "test test test",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
     postings = idx.get_postings("test")
-    assert postings == {"0": 3}  # The word "test" appears 3 times in document ID "0"
+    assert postings["0"]["score"] == 3  # The word "test" appears 3 times in the document
 
 # Test document frequency by counting the number of documents containing a word
 def test_document_frequency(indexer):
@@ -44,8 +84,28 @@ def test_missing_word(indexer):
 # Test saving and loading the index to ensure data integrity across sessions
 def test_save_load(tmp_path):
     idx = Indexer()
-    idx.add_document(1, [{"text": "Hello world", "type": "text"}])
-    idx.add_document(2, [{"text": "Another document", "type": "text"}])
+    idx.add_document(1, [
+        {
+            "quote": "Hello world",
+            "features": [
+                {
+                    "text": "Hello world",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+    idx.add_document(2, [
+        {
+            "quote": "Another document",
+            "features": [
+                {
+                    "text": "Another document",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
     
     file_path = tmp_path / "index.json"
     idx.save(file_path)
@@ -55,19 +115,32 @@ def test_save_load(tmp_path):
     
     assert new_idx.index == idx.index
     assert new_idx.total_documents == idx.total_documents
-    assert new_idx.get_postings("hello") == {"0": 1}
+    assert new_idx.get_postings("hello") == {
+        "0": {
+            "score": 1,
+            "positions": [0]
+        }
+    }
 
 def test_deduplication():
     idx = Indexer()
-    quote = {"text": "Duplicate quote", "type": "text"}
+    quote = {
+        "quote": "Duplicate quote",
+        "features": [
+            {
+                "text": "Duplicate quote",
+                "type": "text"
+            }
+        ]
+    }
     idx.add_document(1, [quote])
     idx.add_document(2, [quote])
 
     postings = idx.get_postings("duplicate")
-    assert len(postings) == 1  # Only one quote ID should be created
+    assert len(postings) == 1  # Only one quote ID should be created for the duplicate quote
 
     quote_id = list(postings.keys())[0]
     urls = idx.quotes[quote_id]['urls']
-    assert urls == {"1", "2"}  # Both URLs should be associated with the same quote ID
+    assert urls == {"1", "2"}  # Both documents should be associated with the same quote ID
 
 
