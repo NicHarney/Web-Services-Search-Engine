@@ -6,7 +6,14 @@ class Search:
 
     # Find documents that match the query terms using an AND search strategy
     def find(self, query):
+
+        query = query.strip()
+        if query.startswith('"') and query.endswith('"'):
+            phrase = query[1:-1]
+            return self.phrase_search(phrase)
+
         query_terms = self.indexer.tokenize(query)
+        
         if not query_terms:
             return []
         
@@ -14,6 +21,7 @@ class Search:
         doc_scores = {}
         N = self.indexer.total_documents
         for term in query_terms:
+          
             postings = self.indexer.get_postings(term)
             df = len(postings)
 
@@ -50,3 +58,49 @@ class Search:
         for doc_id, freq in postings.items():
             print(f"Document ID: {doc_id}, Frequency: {freq}")
 
+
+    def phrase_search(self, phrase):
+
+        words = self.indexer.tokenize(phrase)
+        if not words:
+            return []
+
+        postings_lists = [self.indexer.get_postings(word) for word in words]
+
+        if any(len(p) == 0 for p in postings_lists):
+            return []
+        
+        common_quotes = set(postings_lists[0].keys())
+
+        for postings in postings_lists[1:]:
+            common_quotes &= set(postings.keys())
+
+        matching_quotes = []
+
+        for quote_id in common_quotes:
+            positions_lists = [
+                postings[quote_id]['positions'] for postings in postings_lists
+            ]
+
+            first_word_positions = positions_lists[0]
+            for pos in first_word_positions:
+                phrase_match = True
+
+                # Check if the subsequent words appear in the correct positions
+                for i in range(1, len(positions_lists)):
+                    expected_pos = pos + i
+                    if expected_pos not in positions_lists[i]:
+                        phrase_match = False
+                        break
+                if phrase_match:
+                    matching_quotes.append(quote_id)
+                    break
+        result_urls = []
+        seen = set()
+        for quote_id in matching_quotes:
+            urls = self.indexer.quotes[quote_id]['urls']
+            for url in urls:
+                if url not in seen:
+                    result_urls.append(url)
+                    seen.add(url)
+        return result_urls

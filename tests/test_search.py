@@ -162,3 +162,57 @@ def test_weighting():
     results = search.find("life")
 
     assert set(results) == {"1", "2", "3"}
+
+def test_phrase_search():
+    idx = Indexer()
+
+    idx.add_document(1, [
+        {
+            "quote": "life is beautiful",
+            "features": [
+                {
+                    "text": "life is beautiful",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+
+    idx.add_document(2, [
+        {
+            "quote": "beautiful life is",
+            "features": [
+                {
+                    "text": "beautiful life is",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+
+    search = Search(idx)
+
+    results = search.find('"life is beautiful"')
+
+    assert results == ["1"]
+
+def test_phrase_search_no_match():
+    idx = Indexer()
+
+    idx.add_document(1, [
+        {
+            "quote": "life is beautiful",
+            "features": [
+                {
+                    "text": "life is beautiful",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+
+    search = Search(idx)
+
+    results = search.find('"beautiful life"')
+
+    assert results == []
