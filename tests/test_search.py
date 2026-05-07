@@ -51,6 +51,10 @@ def test_and_query(search):
     results = search.find("quick fox")
     assert set(results) == {"1", "3"}
 
+def test_quoted_query_requires_adjacent_words(search):
+    results = search.find('"quick fox"')
+    assert results == []
+
 # Testing case insensitivity of search queries
 def test_case_insensitivity(search):
     results = search.find("QUICK")

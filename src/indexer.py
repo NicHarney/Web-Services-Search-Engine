@@ -12,32 +12,37 @@ class Indexer:
 
         self.quote_map = {}
         self.quotes = {}
-        self.next_id = 0
+        self.next_doc_id = 0
+        self.next_quote_id = 0
+        self.documents = {}
 
     def _get_or_create_quote_id(self, quote):
         if quote not in self.quote_map:
-            quote_id = str(self.next_id)
+            quote_id = str(self.next_quote_id)
             self.quote_map[quote] = quote_id
-            self.quotes[quote_id] = {
-                'quote': quote,
-                'urls': set()
-            }
-            self.next_id += 1
-            return quote_id, True
-        return self.quote_map[quote], False
+            self.quotes[quote_id] = quote
+            self.next_quote_id += 1
+            return quote_id
+        return self.quote_map[quote]
     
     # add a document to the indexer and update the index and document count
     def add_document(self, url, content):
         url = str(url)
+        doc_id = str(self.next_doc_id)
+        self.next_doc_id += 1
+        self.documents[doc_id] = {
+            "url": url,
+            "quotes": []
+        }
+        current_position = 0
         for item in content:
            quote_text = item['quote']
-           quote_id, is_new = self._get_or_create_quote_id(quote_text)
+           quote_id = self._get_or_create_quote_id(quote_text)
 
-           self.quotes[quote_id]['urls'].add(url)
+           self.documents[doc_id]["quotes"].append(quote_id)
 
-           if not is_new:
-               continue  # Skip re-indexing if the quote already exists
-           current_position = 0
+        
+           
            for feature in item['features']:
                 text = feature['text']
                 feature_type = feature['type']
@@ -46,15 +51,15 @@ class Indexer:
                 for word in words:
                     if word not in self.index:
                         self.index[word] = {}
-                    if quote_id not in self.index[word]:
-                        self.index[word][quote_id] = {
+                    if doc_id not in self.index[word]:
+                        self.index[word][doc_id] = {
                             "score": 0,
                             "positions": []
                         }
-                    self.index[word][quote_id]['score'] += weight
-                    self.index[word][quote_id]['positions'].append(current_position)
+                    self.index[word][doc_id]['score'] += weight
+                    self.index[word][doc_id]['positions'].append(current_position)
                     current_position += 1
-        self.total_documents = len(self.quotes)
+        self.total_documents += 1
     # tokenize text to lowercase words and remove punctuation
     def tokenize(self, text):
         text = text.lower()
@@ -68,21 +73,18 @@ class Indexer:
     # Save the index and document count to a JSON file
     def save(self, filepath):
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        serialized_quotes = {}
-        for quote_id, quote_data in self.quotes.items():
-            serialized_quotes[quote_id] = {
-                'quote': quote_data['quote'],
-                'urls': list(quote_data['urls'])
-            }
+        
         with open(filepath, 'w') as f:
 
             json.dump({
                 'index': self.index,
-                'quotes': serialized_quotes,
+                'documents': self.documents,
+                'quotes': self.quotes,
                 'quote_map': self.quote_map,
                 'total_documents': self.total_documents,
-                'next_id': self.next_id
-                
+                'next_doc_id': self.next_doc_id,
+                'next_quote_id': self.next_quote_id
+
             }, f)
     # Load the index and document count from a JSON file
     def load(self, filepath):
@@ -92,14 +94,11 @@ class Indexer:
         self.index = data['index']
         self.quote_map = data['quote_map']
         self.total_documents = data['total_documents']
-        self.next_id = data['next_id']
-
-        self.quotes = {}
-        for quote_id, quote_data in data['quotes'].items():
-            self.quotes[quote_id] = {
-                'quote': quote_data['quote'],
-                'urls': set(quote_data['urls'])
-            }
+        self.next_doc_id = data['next_doc_id']
+        self.next_quote_id = data['next_quote_id']
+        self.quotes = data['quotes']
+        self.documents = data['documents']
+     
 
 DOCS = {
     1: "The quick brown fox jumps over the lazy dog",
