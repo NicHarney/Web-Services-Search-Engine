@@ -45,7 +45,7 @@ def test_tokenization():
     idx = Indexer()
     text = "Hello, World! This is a test."
     tokens = idx.tokenize(text)
-    assert tokens == ['hello', 'world', 'this', 'is', 'a', 'test']
+    assert tokens == ["hello", "world", "thi", "is", "a", "test"]
 
 # Test retrieval of postings
 def test_case_insensitivity(indexer):
@@ -138,7 +138,15 @@ def test_deduplication():
 
     assert len(idx.quote_map) == 1  # Only one unique quote should be stored
 
-    postings = idx.get_postings("duplicate")
+    term = idx.tokenize("Duplicate quote")[0]
+    postings = idx.get_postings(term)
     assert len(postings) == 2  # Both documents should reference the same quote
+
+def test_stemming():
+    idx = Indexer()
+    tokens = idx.tokenize("running runs runner")
+    assert tokens == ["run", "run", "runner"]  # "running" and "runs" should be stemmed to "run"
+
+
 
 

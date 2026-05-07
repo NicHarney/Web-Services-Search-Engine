@@ -249,3 +249,21 @@ def test_proximity_boost_ranking():
     search = Search(idx)
     results = search.find("good friends")
     assert set(results) == {"1", "2"}
+def test_stemmed_search():
+    idx = Indexer()
+
+    idx.add_document(1, [
+        {
+            "quote": "I am running",
+            "features": [
+                {
+                    "text": "I am running",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+
+    search = Search(idx)
+    results = search.find("run")
+    assert set(results) == {"1"}  # The search for "run" should match the document containing "running"

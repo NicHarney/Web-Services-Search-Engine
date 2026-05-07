@@ -1,7 +1,7 @@
 import json
 import re
 import os
-
+from nltk.stem import PorterStemmer
 #  Inverted Indexer Implementation
 class Indexer:
 
@@ -15,6 +15,8 @@ class Indexer:
         self.next_doc_id = 0
         self.next_quote_id = 0
         self.documents = {}
+
+        self.stemmer = PorterStemmer()
 
     def _get_or_create_quote_id(self, quote):
         if quote not in self.quote_map:
@@ -63,8 +65,18 @@ class Indexer:
     # tokenize text to lowercase words and remove punctuation
     def tokenize(self, text):
         text = text.lower()
-        return re.findall(r'\b\w+\b', text)    
-    
+
+        words = re.findall(
+            r'\b[a-zA-Z0-9]+\b', text
+        )  
+        
+        stemmed_words = []
+
+        for word in words:
+            stemmed = self.stemmer.stem(word)
+            stemmed_words.append(stemmed)
+        return stemmed_words
+
     # Retrieve the postings list for a given term, returning an empty dictionary if the term is not found
     def get_postings(self, term):
         word = term.lower()
@@ -114,3 +126,6 @@ HTML_WEIGHTS = {
     "anchor": 1.5,
     "text": 1
 }
+
+indexer = Indexer()
+print(indexer.tokenize("running runs runner"))
