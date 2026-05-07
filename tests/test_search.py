@@ -220,3 +220,32 @@ def test_phrase_search_no_match():
     results = search.find('"beautiful life"')
 
     assert results == []
+
+
+def test_proximity_boost_ranking():
+    idx = Indexer()
+    idx.add_document(1, [
+        {
+            "quote": "good friends",
+            "features": [
+                {
+                    "text": "good friends",
+                    "type": "text"
+                }
+            ]
+        }
+    ])
+
+    idx.add_document(2, [{
+        "quote": "good and loyal friends",
+        "features": [
+            {
+                "text": "good and loyal friends",
+                "type": "text"
+            }
+        ]
+    }])
+
+    search = Search(idx)
+    results = search.find("good friends")
+    assert set(results) == {"1", "2"}

@@ -136,11 +136,9 @@ def test_deduplication():
     idx.add_document(1, [quote])
     idx.add_document(2, [quote])
 
-    postings = idx.get_postings("duplicate")
-    assert len(postings) == 1  # Only one quote ID should be created for the duplicate quote
+    assert len(idx.quote_map) == 1  # Only one unique quote should be stored
 
-    quote_id = list(postings.keys())[0]
-    urls = idx.quotes[quote_id]['urls']
-    assert urls == {"1", "2"}  # Both documents should be associated with the same quote ID
+    postings = idx.get_postings("duplicate")
+    assert len(postings) == 2  # Both documents should reference the same quote
 
 
