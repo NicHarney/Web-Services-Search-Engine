@@ -73,6 +73,9 @@ class Indexer:
         stemmed_words = []
 
         for word in words:
+
+            if word in STOPWORDS:
+                continue
             stemmed = self.stemmer.stem(word)
             stemmed_words.append(stemmed)
         return stemmed_words
@@ -127,5 +130,8 @@ HTML_WEIGHTS = {
     "text": 1
 }
 
-indexer = Indexer()
-print(indexer.tokenize("running runs runner"))
+STOPWORDS = {
+    "the", "is", "and", "a", "an", "in", "on", "at", "to", "for", "with",
+    "by", "of", "that", "this", "it", "as", "are", "was", "were",
+    "be", "from", "or", "which"
+}

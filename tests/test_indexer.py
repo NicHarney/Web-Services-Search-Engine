@@ -45,14 +45,33 @@ def test_tokenization():
     idx = Indexer()
     text = "Hello, World! This is a test."
     tokens = idx.tokenize(text)
-    assert tokens == ["hello", "world", "thi", "is", "a", "test"]
+    assert tokens == ["hello", "world", "test"]
 
 # Test retrieval of postings
-def test_case_insensitivity(indexer):
-    postings = indexer.get_postings("the")
-    
-    quote_ids = set(postings.keys())
-    assert len(quote_ids) == 3  
+def test_case_insensitivity():
+
+    idx = Indexer()
+
+    content = [{
+        "quote": "Hello World",
+        "features": [
+            {
+                "text": "Hello World",
+                "type": "text"
+            }
+        ]
+    }]
+
+    idx.add_document(
+        "http://test.com",
+        content
+    )
+
+    term = idx.tokenize("HELLO")[0]
+
+    postings = idx.get_postings(term)
+
+    assert len(postings) == 1
 
 # Test term frequency by counting occurrences of a word in a document
 def test_term_frequency():
