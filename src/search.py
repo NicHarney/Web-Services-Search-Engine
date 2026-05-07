@@ -10,22 +10,27 @@ class Search:
        
         query = query.strip()
       
+        # check if the query is a phrase search (enclosed in quotes) and handle it separately
         if self._is_phrase_query(query):
             phrase = query[1:-1]
             
             return self.phrase_search(phrase)
 
+        # tokenize the query
         query_terms = self.indexer.tokenize(query)
         
         if not query_terms:
             return []
 
+        # retrieve postings lists for each query term and find the intersection of documents that contain all query terms
         postings_lists = [self.indexer.get_postings(term) for term in query_terms]
         if any(len(p) == 0 for p in postings_lists):
             return []
         
+        # find documents that contain all query terms
         common_docs = set(postings_lists[0].keys())
         for postings in postings_lists[1:]:
+            # intersect the sets of documents for each term to find common documents that contain all query terms
             common_docs &= set(postings.keys())
         
         # implement idf ranking
@@ -38,11 +43,15 @@ class Search:
 
             if df == 0:
                 continue
-            idf = math.log((N + 1) / (df + 1)) + 1 # Adding 1 to avoid division by zero and to smooth idf
+            # Adding 1 to avoid division by zero and to smooth idf
+            idf = math.log((N + 1) / (df + 1)) + 1 
 
             for doc_id in common_docs:
-                tf = postings[doc_id]['score'] # Get the term frequency score from the postings
+                # Get the term frequency score from the postings
+                tf = postings[doc_id]['score'] 
                 score = tf * idf
+
+                # accumulate scores for each document
                 if doc_id not in doc_scores:
                     doc_scores[doc_id] = 0
                 doc_scores[doc_id] += score
@@ -51,6 +60,7 @@ class Search:
                 for doc_id in common_docs:
                     proximity_boost = 0
 
+                    # calculate proximity boost based on the minimum distance between query terms in the document
                     for i in range(len(query_terms) - 1):
                         term1 = query_terms[i]
                         term2 = query_terms[i + 1]
@@ -60,8 +70,11 @@ class Search:
                         positions2 = postings2[doc_id]['positions']
                         
                         min_dist = self.minimum_distance(positions1, positions2)
-                        proximity_boost += 1 / (min_dist + 1) # Add 1 to avoid division by zero
-                    doc_scores[doc_id] += proximity_boost * 2 # Proximity boost weight
+                        # Add 1 to avoid division by zero
+                        proximity_boost += 1 / (min_dist + 1)
+                    
+                    # Proximity boost weight
+                    doc_scores[doc_id] += proximity_boost * 2 
 
 
         # sort documents by score in descending order
@@ -81,21 +94,26 @@ class Search:
         for doc_id, freq in postings.items():
             print(f"Document ID: {doc_id}, Frequency: {freq}")
 
+    # helper function to check if a query is a phrase search (enclosed in quotes)
     def _is_phrase_query(self, query):
         return len(query) >= 2 and query[0] == '"' and query[-1] == '"'
 
 
+    # perform a phrase search by checking if the exact sequence of words appears in the same order in the documents
     def phrase_search(self, phrase):
 
         words = self.indexer.tokenize(phrase)
         if not words:
             return []
 
+        # retrieve list for each word in the phrase
         postings_lists = [self.indexer.get_postings(word) for word in words]
 
+        # if any word in the phrase does not appear in any document, return an empty list
         if any(len(p) == 0 for p in postings_lists):
             return []
         
+        # find documents that contain all words in the phrase by intersecting the sets of documents for each word
         common_docs = set(postings_lists[0].keys())
 
         for postings in postings_lists[1:]:
@@ -103,12 +121,15 @@ class Search:
 
         matching_docs = []
 
+        # check if the words in the phrase appear in the correct order and positions in the documents
         for doc_id in common_docs:
             positions_lists = [
                 postings[doc_id]['positions'] for postings in postings_lists
             ]
 
             first_word_positions = positions_lists[0]
+
+            # check if the subsequent words in the phrase appear in the correct positions relative to the first word
             for pos in first_word_positions:
                 phrase_match = True
 
@@ -122,12 +143,15 @@ class Search:
                     break
         return self._docs_to_urls(matching_docs)
 
+    # convert document IDS to urls for output
     def _docs_to_urls(self, doc_ids):
         return [self.indexer.documents[doc_id]['url'] for doc_id in doc_ids]
 
+    # calculate minimum distance between two positions lists for proximity ranking
     def minimum_distance(self, positions1, positions2):
         i, j = 0, 0
         min_dist = float('inf')
+        # use a two-pointer technique to find the minimum distance between any two positions in the lists
         while i < len(positions1) and j < len(positions2):
             min_dist = min(min_dist, abs(positions1[i] - positions2[j]))
             if positions1[i] < positions2[j]:

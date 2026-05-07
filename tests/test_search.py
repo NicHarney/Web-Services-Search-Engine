@@ -70,6 +70,7 @@ def test_empty_query(search):
     results = search.find("")
     assert results == []
 
+# Testing ranking of search results
 def test_ranking():
     idx = Indexer()
     idx.add_document(1, [
@@ -100,6 +101,7 @@ def test_ranking():
 
     assert set(results) == {"1", "2"}     
 
+# Testing that the search returns all matching URLs for a given query term
 def test_search_returns_all_urls():
     idx = Indexer()
 
@@ -122,6 +124,7 @@ def test_search_returns_all_urls():
 
     assert set(results) == {"url1", "url2"}
 
+# Test weighting of terms based on HTML element type
 def test_weighting():
     idx = Indexer()
 
@@ -167,6 +170,7 @@ def test_weighting():
 
     assert set(results) == {"1", "2", "3"}
 
+# Test phrase search
 def test_phrase_search():
     idx = Indexer()
 
@@ -200,6 +204,7 @@ def test_phrase_search():
 
     assert results == ["1"]
 
+# Test phrase search with no match
 def test_phrase_search_no_match():
     idx = Indexer()
 
@@ -221,7 +226,7 @@ def test_phrase_search_no_match():
 
     assert results == []
 
-
+# Test proximity boost ranking
 def test_proximity_boost_ranking():
     idx = Indexer()
     idx.add_document(1, [
@@ -249,6 +254,8 @@ def test_proximity_boost_ranking():
     search = Search(idx)
     results = search.find("good friends")
     assert set(results) == {"1", "2"}
+
+# Test stemming of search terms to match different forms of a word
 def test_stemmed_search():
     idx = Indexer()
 

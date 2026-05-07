@@ -141,6 +141,7 @@ def test_save_load(tmp_path):
         }
     }
 
+# Test deduplication of quotes to ensure the same quote is not stored multiple times in the index
 def test_deduplication():
     idx = Indexer()
     quote = {
@@ -161,6 +162,7 @@ def test_deduplication():
     postings = idx.get_postings(term)
     assert len(postings) == 2  # Both documents should reference the same quote
 
+# Test the indexer handles similar words correctly by stemming them to their root form
 def test_stemming():
     idx = Indexer()
     tokens = idx.tokenize("running runs runner")

@@ -16,14 +16,22 @@ class Crawler:
 
         while queue:
             url = queue.popleft()
+            # skip if already visited
             if url in self.visited:
                 continue
             print(f"Crawling: {url}")
+            # mark as visited
             self.visited.add(url)
+
+            # fetch page and extract text
             html = self.fetch_page(url)
             text = self.extract_text(html)
+
+            # add document to indexer
             self.indexer.add_document(url, text)
             next_page = self.get_next_page(html)
+
+
             # add next page
             if next_page:
                 queue.append(next_page)
@@ -36,10 +44,14 @@ class Crawler:
     
     # Fetch a web page and return its HTML content, with error handling and a politeness delay
     def fetch_page(self, url):
+
+        # Implement error handling for network issues and respect politeness by adding a delay between requests
         try:
             response = requests.get(url)
             response.raise_for_status()
-            time.sleep(6)  # Politeness delay
+
+            # Politeness delay
+            time.sleep(6)  
             return response.text
         except requests.RequestException as e:
             print(f"Error fetching {url}: {e}")
@@ -57,6 +69,7 @@ class Crawler:
         for quote in quotes:
             text = quote.get_text()
 
+            # Add the quote text as a feature with type 'text' and weight 1
             content.append({
                 "quote": text,
                 "features": [
@@ -81,6 +94,7 @@ class Crawler:
             return urljoin(self.base_url, href)
         return None
 
+    # Find URLs of tag pages and return their absolute URLs
     def get_tag_links(self,html):
         soup = BeautifulSoup(html, 'html.parser')
         tags = soup.find_all('a', class_='tag')
