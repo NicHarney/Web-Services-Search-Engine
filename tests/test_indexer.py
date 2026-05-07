@@ -46,6 +46,10 @@ def test_tokenization():
     text = "Hello, World! This is a test."
     tokens = idx.tokenize(text)
     assert tokens == ["hello", "world", "test"]
+    assert idx.tokenize("Version 2 released") == ["version", "2", "releas"]  # Numbers should be included as tokens
+    assert idx.tokenize("") == []  # Empty string should return an empty list of tokens
+    assert idx.tokenize("   ") == []  # String with only whitespace should return an empty list of tokens#
+    assert idx.tokenize("hello...world!!") == ["hello", "world"]  # Punctuation should be removed from tokens
 
 # Test retrieval of postings
 def test_case_insensitivity():
@@ -89,6 +93,7 @@ def test_term_frequency():
     ])
     postings = idx.get_postings("test")
     assert postings["0"]["score"] == 3  # The word "test" appears 3 times in the document
+    assert postings["0"]["positions"] == [0, 1, 2]  # The positions of the word "test" in the document should be recorded correctly
 
 # Test document frequency by counting the number of documents containing a word
 def test_document_frequency(indexer):
@@ -167,6 +172,7 @@ def test_stemming():
     idx = Indexer()
     tokens = idx.tokenize("running runs runner")
     assert tokens == ["run", "run", "runner"]  # "running" and "runs" should be stemmed to "run"
+    assert idx.tokenize("RUNNING") == ["run"]  # Stemming should be case-insensitive
 
 
 

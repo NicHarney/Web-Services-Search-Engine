@@ -203,6 +203,8 @@ def test_phrase_search():
     results = search.find('"life is beautiful"')
 
     assert results == ["1"]
+    assert search.find("") == []  # Searching with an empty string should return an empty list of results
+    assert search.find("  ") == []  # Searching with a string of only whitespace should return an empty list of results
 
 # Test phrase search with no match
 def test_phrase_search_no_match():
@@ -274,3 +276,10 @@ def test_stemmed_search():
     search = Search(idx)
     results = search.find("run")
     assert set(results) == {"1"}  # The search for "run" should match the document containing "running"
+
+def test_punctuation_only_query():
+    idx = Indexer()
+
+    search = Search(idx)
+    results = search.find("!!!")
+    assert results == []  # A query consisting only of punctuation should return an empty list of

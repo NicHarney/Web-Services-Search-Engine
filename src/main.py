@@ -47,7 +47,11 @@ def main():
         indexer = load()
 
         # allocate term argument
-        term = indexer.tokenize(sys.argv[2])[0]
+        term = indexer.tokenize(sys.argv[2])
+        if not term:
+            print("Term must contain at least one valid token.")
+            return
+        term = term[0]  # Use the first token from the term argument
         print(indexer.get_postings(term))
     
     # execute a search query and print the matching documents, with error handling for missing query argument
@@ -60,7 +64,11 @@ def main():
 
         # allocate query argument
         query = " ".join(sys.argv[2:])
-        query = indexer.tokenize(query)[0]  # Tokenize the query
+        query = indexer.tokenize(query)
+        if not query:
+            print("Query must contain at least one valid token.")
+            return
+        query = query[0]  # Use the first token from the query argument
         results = search.find(query)
         print(f"Documents matching '{query}': {results}")
     else:
