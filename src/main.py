@@ -18,7 +18,11 @@ def build():
 # load index
 def load():
     indexer = Indexer()
-    indexer.load(INDEX_FILE)
+    try:
+        indexer.load(INDEX_FILE)
+    except FileNotFoundError:
+        print("No index file found, please run the build command first")
+        return None
     return indexer
 
 # main loop to hand CLI commands
@@ -37,6 +41,8 @@ def main():
         build()
     elif command == "load":
         indexer = load()
+        if indexer is None:
+            return
         print(f"Loaded index with {indexer.total_documents} documents.")
      
     # print the postings list for a given term, with error handling for missing term argument
@@ -46,6 +52,8 @@ def main():
             return
         indexer = load()
 
+        if indexer is None:
+            return
         # allocate term argument
         term = indexer.tokenize(sys.argv[2])
         if not term:
@@ -60,6 +68,8 @@ def main():
             print("Usage: python main.py find [query]")
             return
         indexer = load()
+        if indexer is None:
+            return
         search = Search(indexer)
 
         # allocate query argument

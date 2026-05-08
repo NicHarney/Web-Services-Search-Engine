@@ -123,6 +123,10 @@ class Indexer:
             }, f)
     # Load the index and document count from a JSON file
     def load(self, filepath):
+
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"File {filepath} does not exist")
+            
         with open(filepath, 'r') as f:
             data = json.load(f)
 
